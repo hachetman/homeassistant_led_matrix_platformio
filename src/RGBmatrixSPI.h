@@ -18,7 +18,13 @@ private:
   int matrix_width;
   int matrix_height;
   int spi_speed;
-  SPIClass *vspi = NULL;
+  SPIClass spi;
+  enum class Registers : std::uint8_t {
+    brightness = 0xf1,
+    transfer = 0xf3
+  };
+  const uint16_t lower_bytes = 0x00ff;
+  const uint16_t upper_shift = 8;
 };
 
 #endif

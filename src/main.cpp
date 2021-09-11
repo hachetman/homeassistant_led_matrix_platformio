@@ -14,12 +14,11 @@ const int initial_brightness = 64;
 void setup() {
 
   Serial.begin(uart_speed);
-
-  WiFi.mode(WIFI_STA);
+  WiFiClass::mode(WIFI_MODE_STA);
   WiFi.begin(ssid.c_str(), password.c_str());
 
   Serial.print("Connecting to WiFi ..");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFiClass::status() != WL_CONNECTED) {
     Serial.print('.');
     delay(delay_1s);
   }

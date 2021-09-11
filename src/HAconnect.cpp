@@ -1,14 +1,14 @@
 #include "HAconnect.h"
+#include "HTTPClient.h"
 #include "HardwareSerial.h"
 
 HAconnect::HAconnect(String Address, int Port, String Auth)
-    : address(Address), port(Port), auth(Auth) {}
-
-auto HAconnect::getEntity(String entity, String &message) -> int {
+    : http(), address(Address), port(Port), auth(Auth) {}
+ auto HAconnect::getEntity(String entity, String &message) -> int {
   String access_path = "/api/states/" + entity;
   int httpCode = 0;
   http.begin(address, port,
-             access_path); // Specify destination for HTTP request
+             access_path);
   http.addHeader("Content-Type", "application/json");
   http.setAuthorization("");
   http.addHeader("Authorization", auth.c_str());
@@ -32,7 +32,7 @@ auto HAconnect::getState(String entity) -> int {
   String message;
   int result = getEntity(entity, message);
 
-  if (result == 200) {
+  if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
     return doc["state"].as<int>();
