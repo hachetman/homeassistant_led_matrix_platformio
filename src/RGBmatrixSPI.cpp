@@ -1,8 +1,10 @@
 #include "RGBmatrixSPI.h"
+#include "stdint.h"
 
 #include <stdlib.h>     /* malloc, free, rand */
+#include <sys/types.h>
 
-RGBmatrixSPI::RGBmatrixSPI(int width, int height, int speed)
+RGBmatrixSPI::RGBmatrixSPI(int16_t width, int16_t height, int speed)
     : Adafruit_GFX(width, height), matrix_width(width), matrix_height(height),
       spi_speed(speed), spi(VSPI) {
   Serial.println("Initializing");

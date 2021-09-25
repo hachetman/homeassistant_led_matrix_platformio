@@ -82,16 +82,18 @@ auto HAconnect::getSun() -> bool {
   String message;
   String buffer;
   int result = getEntity("sun.sun", message);
+  bool retval = false;
   if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
     if (doc["state"] == "above_horizon") {
-      return true;
+      retval = true;
     } else {
-      return false;
+      retval = false;
     }
   } else {
     Serial.println("Error in Connect");
-    return false;
+    retval = false;
   }
+  return retval;
 }

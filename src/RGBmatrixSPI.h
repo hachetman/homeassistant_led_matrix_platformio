@@ -10,7 +10,7 @@
 
 class RGBmatrixSPI : public Adafruit_GFX {
 public:
-  RGBmatrixSPI(int width, int height, int speed);
+  RGBmatrixSPI(int16_t width, int16_t height, int speed);
   void drawPixel(int16_t x, int16_t y, uint16_t c);
   void setBrightness(int8_t brightness);
   uint8_t *frameBuffer;
