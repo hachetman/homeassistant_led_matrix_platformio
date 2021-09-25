@@ -1,6 +1,4 @@
 #include "HAconnect.h"
-#include "Hack_Regular7pt7b.h"
-#include "Hack_Regular8pt7b.h"
 #include "HardwareSerial.h"
 #include "RGBmatrixSPI.h"
 #include "secrets.h"
