@@ -6,10 +6,10 @@
 #include "sys/unistd.h"
 #include <Arduino.h>
 #include <Fonts/FreeMonoBold12pt7b.h>
-#include <NTPClient.h>
 #include <array>
 #include <cstdint>
 #include <cstdio>
+#include <time.h>
 
 #include <WiFi.h>
 
@@ -46,13 +46,12 @@ const uint16_t fourth_line = 56;
 const uint16_t first_off = 1;
 const uint16_t second_off = 6;
 const uint16_t third_off = 11;
+const char *ntpServer = "pool.ntp.org";
 
 TaskHandle_t TaskHA = nullptr;
 TaskHandle_t TaskMatrix = nullptr;
 void TaskHA_update(void *pvParameters);
 void TaskMatrix_update(void *pvParameters);
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7200, 60000);
 
 struct HaExchange matrix_data;
 void setup() {
@@ -89,12 +88,18 @@ void setup() {
       task_prio,            /* priority of the task */
       &TaskMatrix,          /* Task handle to keep track of created task */
       1);                   /* pin task to core 1 */
-  timeClient.begin();
-  timeClient.update();
+  configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
 
 void TaskHA_update(void *pvParameters) {
   auto *data = (struct HaExchange *)pvParameters;
+  struct tm timeinfo;
   Serial.print("HA Update running on core ");
   Serial.println(xPortGetCoreID());
   HAconnect ha(address, port, auth);
@@ -109,8 +114,9 @@ void TaskHA_update(void *pvParameters) {
     data->mintemp =
         ha.getState("sensor.openweathermap_forecast_temperature_low");
     data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
-    if (timeClient.getHours() == 4 && timeClient.getMinutes() == 0 &&
-        timeClient.getSeconds() == 00) {
+    getLocalTime(&timeinfo);
+    if (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 &&
+        timeinfo.tm_sec == 00) {
       ESP.restart();
     }
     delay(delay_update);
@@ -137,8 +143,11 @@ void TaskMatrix_update(void *pvParameters) {
   Serial.print("Matrix update running on core ");
   Serial.println(xPortGetCoreID());
   RGBmatrixSPI matrix(matrix_width, matrix_height, spi_speed);
+  struct tm timeinfo;
+  matrix.setTextWrap(false);
 
   for (;;) {
+    getLocalTime(&timeinfo);
     if (data->sun) {
       matrix.setBrightness(static_cast<uint16_t>(brightness::DAY));
     } else {
@@ -148,15 +157,15 @@ void TaskMatrix_update(void *pvParameters) {
                     static_cast<uint16_t>(color::BLACK));
     matrix.setFont(&FreeMonoBold12pt7b);
     matrix.setCursor(0, 16);
-    matrix.printf("%02d", timeClient.getHours());
+    matrix.printf("%02d", timeinfo.tm_hour);
     matrix.setCursor(26, 14);
-    if (timeClient.getSeconds() % 2) {
+    if (timeinfo.tm_sec % 2) {
       matrix.printf(":");
     } else {
       matrix.printf(" ");
     }
     matrix.setCursor(36, 16);
-    matrix.printf("%02d", timeClient.getMinutes());
+    matrix.printf("%02d", timeinfo.tm_min);
 
     matrix.setFont();
     str_len = sprintf(buffer.data(), "%2d", data->temperature);
