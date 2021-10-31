@@ -205,8 +205,8 @@ void TaskMatrix_update(void *pvParameters) {
     matrix.printf(":");
     matrix.setCursor(third_off, first_line);
     matrix.printf("%s", buffer.data());
-    matrix.drawCircle(third_off + str_len * 6, 25, 1,
-                      static_cast<uint16_t>(color::WHITE));
+    matrix.drawCircle(third_off + str_len * 6 + 1, 25, 1,
+                      get_text_color(data->sun));
 
     matrix.setCursor(first_off + matrix_width / 2, first_line);
     matrix.printf("H");
@@ -246,10 +246,9 @@ void TaskMatrix_update(void *pvParameters) {
     matrix.printf("->");
     matrix.setCursor(9 + str_len * 6 + 18, fourth_line);
     matrix.printf("%2d", data->maxtemp);
-    matrix.drawCircle(9 + str_len * 6, 55, 1,
-                      static_cast<uint16_t>(color::WHITE));
-    matrix.drawCircle(9 + str_len * 6 + 18 + str_len2 * 6, 55, 1,
-                      static_cast<uint16_t>(color::WHITE));
+    matrix.drawCircle(9 + str_len * 6 + 1, 55, 1, get_text_color(data->sun));
+    matrix.drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
+                      get_text_color(data->sun));
     matrix.transfer();
   }
 }
