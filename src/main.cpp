@@ -17,15 +17,20 @@ enum class color : uint16_t {
   BLACK = 0x0000,
   BLUE = 0x001f,
   RED = 0xf800,
+  DIM_RED = 0x3800,
   GREEN = 0x07E0,
+  DIM_GREEN = 0x01E0,
   CYAN = 0x07FF,
   MAGENTA = 0xF81f,
   YELLOW = 0xFFE0,
+  DIM_YELLOW = 0x39E0,
   ORANGE = 0xFC00,
-  WHITE = 0xFFFF
+  DIM_ORANGE = 0x3900,
+  WHITE = 0xFFFF,
+  DIM_WHITE = 0x39E7,
 };
 
-enum class brightness : uint16_t { DAY = 0x0020, NIGHT = 0x0003 };
+enum class brightness : uint16_t { DAY = 0x0020, NIGHT = 0x0002 };
 enum class co2_thresh : uint16_t { GOOD = 700, MEDIUM = 900, BAD = 1000 };
 const int matrix_width = 64;
 const int matrix_height = 64;
@@ -43,9 +48,10 @@ const uint16_t second_line = 36;
 const uint16_t third_line = 46;
 const uint16_t fourth_line = 56;
 
-const uint16_t first_off = 1;
-const uint16_t second_off = 6;
-const uint16_t third_off = 11;
+const uint16_t first_off = 0;
+const uint16_t second_off = 4;
+const uint16_t third_off = 9;
+
 const char *ntpServer = "pool.ntp.org";
 
 TaskHandle_t TaskHA = nullptr;
@@ -123,17 +129,40 @@ void TaskHA_update(void *pvParameters) {
   }
 }
 
-uint16_t co2_color(int co2) {
+uint16_t co2_color(int co2, bool sun) {
   if (co2 < static_cast<uint16_t>(co2_thresh::GOOD)) {
-    return static_cast<uint16_t>(color::GREEN);
+    if (sun) {
+      return static_cast<uint16_t>(color::GREEN);
+    } else {
+      return static_cast<uint16_t>(color::DIM_GREEN);
+    }
   }
   if (co2 < static_cast<uint16_t>(co2_thresh::MEDIUM)) {
-    return static_cast<uint16_t>(color::YELLOW);
+    if (sun) {
+      return static_cast<uint16_t>(color::YELLOW);
+    } else {
+      return static_cast<uint16_t>(color::DIM_YELLOW);
+    }
   }
   if (co2 < static_cast<uint16_t>(co2_thresh::BAD)) {
-    return static_cast<uint16_t>(color::ORANGE);
+    if (sun) {
+      return static_cast<uint16_t>(color::ORANGE);
+    } else {
+      return static_cast<uint16_t>(color::DIM_ORANGE);
+    }
   }
-  return static_cast<uint16_t>(color::RED);
+  if (sun) {
+    return static_cast<uint16_t>(color::RED);
+  } else {
+    return static_cast<uint16_t>(color::DIM_RED);
+  }
+}
+uint16_t get_text_color(bool sun) {
+  if (sun) {
+    return static_cast<uint16_t>(color::WHITE);
+  } else {
+    return static_cast<uint16_t>(color::DIM_WHITE);
+  }
 }
 void TaskMatrix_update(void *pvParameters) {
   std::array<char, 10> buffer;
@@ -153,6 +182,7 @@ void TaskMatrix_update(void *pvParameters) {
     } else {
       matrix.setBrightness(static_cast<uint16_t>(brightness::NIGHT));
     }
+    matrix.setTextColor(get_text_color(data->sun));
     matrix.fillRect(0, 0, matrix_width, matrix_height,
                     static_cast<uint16_t>(color::BLACK));
     matrix.setFont(&FreeMonoBold12pt7b);
@@ -199,7 +229,7 @@ void TaskMatrix_update(void *pvParameters) {
     matrix.setCursor(third_off + matrix_width / 2, second_line);
     matrix.printf("%02d%%", data->precipation);
 
-    matrix.setTextColor(co2_color(data->co2));
+    matrix.setTextColor(co2_color(data->co2, data->sun));
     matrix.setCursor(10, third_line);
     matrix.printf("CO2");
     matrix.setCursor(28, third_line);
@@ -207,7 +237,7 @@ void TaskMatrix_update(void *pvParameters) {
     matrix.setCursor(34, third_line);
     matrix.printf("%d", data->co2);
 
-    matrix.setTextColor(static_cast<uint16_t>(color::WHITE));
+    matrix.setTextColor(get_text_color(data->sun));
     str_len = sprintf(buffer.data(), "%2d", data->mintemp);
     str_len2 = sprintf(buffer.data(), "%2d", data->maxtemp);
     matrix.setCursor(9, fourth_line);
