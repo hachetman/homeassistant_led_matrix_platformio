@@ -38,7 +38,7 @@ const int uart_speed = 115200;
 const int spi_speed = 8000000;
 const int delay_1s = 1000;
 const int delay_500ms = 500;
-const int delay_update = 5000;
+const int delay_update = 50000;
 
 const int stacksize = 10000;
 const int task_prio = 1;
@@ -75,25 +75,25 @@ void setup() {
   // create a task that will be executed in the Task1code() function, with
   // priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-      TaskHA_update,    /* Task function. */
-      "Task HA Update", /* name of task. */
-      stacksize,        /* Stack size of task */
-      &matrix_data,     /* parameter of the task */
-      task_prio,        /* priority of the task */
-      &TaskHA,          /* Task handle to keep track of created task */
-      0);               /* pin task to core 0 */
+    TaskHA_update,    /* Task function. */
+    "Task HA Update", /* name of task. */
+    stacksize,        /* Stack size of task */
+    &matrix_data,     /* parameter of the task */
+    task_prio,        /* priority of the task */
+    &TaskHA,          /* Task handle to keep track of created task */
+    0);               /* pin task to core 0 */
   delay(delay_500ms);
 
   // create a task that will be executed in the Task2code() function, with
   // priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-      TaskMatrix_update,    /* Task function. */
-      "Task Matrix Update", /* name of task. */
-      stacksize,            /* Stack size of task */
-      &matrix_data,         /* parameter of the task */
-      task_prio,            /* priority of the task */
-      &TaskMatrix,          /* Task handle to keep track of created task */
-      1);                   /* pin task to core 1 */
+    TaskMatrix_update,    /* Task function. */
+    "Task Matrix Update", /* name of task. */
+    stacksize,            /* Stack size of task */
+    &matrix_data,         /* parameter of the task */
+    task_prio,            /* priority of the task */
+    &TaskMatrix,          /* Task handle to keep track of created task */
+    1);                   /* pin task to core 1 */
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", ntpServer);
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
@@ -111,22 +111,41 @@ void TaskHA_update(void *pvParameters) {
   HAconnect ha(address, port, auth);
   for (;;) {
     Serial.println("Updating sensors");
-    data->co2 = ha.getState("sensor.co2");
-    ha.getWeather(data);
-    data->ping = ha.getPing();
-    data->sun = ha.getSun();
-    data->precipation =
+    if (WiFi.status() != WL_CONNECTED) {
+      data->uistate = ui_state::NO_WIFI;
+      Serial.println("Reconnecting to WIFI network");
+      WiFi.disconnect();
+      WiFi.begin(ssid.c_str(), password.c_str());
+      Serial.print("Connecting to WiFi ..");
+      int timeout = 0;
+      while ((WiFiClass::status() != WL_CONNECTED) and (timeout != 10)) {
+        Serial.print('.');
+        delay(delay_1s);
+        timeout++;
+      }
+    } else {
+      data->uistate = ui_state::OVERVIEW;
+      //check if connection is good
+      data->co2 = ha.getState("sensor.co2");
+      ha.getWeather(data);
+      data->ping = ha.getPing();
+      data->sun = ha.getSun();
+      data->precipation =
         ha.getState("sensor.openweathermap_forecast_precipitation_probability");
-    data->mintemp =
+      data->mintemp =
         ha.getState("sensor.openweathermap_forecast_temperature_low");
-    data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
-    getLocalTime(&timeinfo);
-    if (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 &&
-        timeinfo.tm_sec == 00) {
-      ESP.restart();
+      data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
+      data->temperature = ha.getState("sensor.balkon_temperatur");
+      data->humidity = ha.getState("sensor.balkon_feuchte");
+      getLocalTime(&timeinfo);
+      if (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 &&
+          timeinfo.tm_sec == 00) {
+        ESP.restart();
+      }
     }
     delay(delay_update);
   }
+
 }
 
 uint16_t co2_color(int co2, bool sun) {
@@ -164,92 +183,137 @@ uint16_t get_text_color(bool sun) {
     return static_cast<uint16_t>(color::DIM_WHITE);
   }
 }
-void TaskMatrix_update(void *pvParameters) {
+void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
+  struct tm timeinfo;
   std::array<char, 10> buffer;
+  int16_t str_len = 0;
+  int16_t str_len2 = 0;
+  getLocalTime(&timeinfo);
+  if (data->sun) {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
+  } else {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
+  }
+  matrix->setTextColor(get_text_color(data->sun));
+  matrix->fillRect(0, 0, matrix_width, matrix_height,
+                  static_cast<uint16_t>(color::BLACK));
+  matrix->setFont(&FreeMonoBold12pt7b);
+  matrix->setCursor(0, 16);
+  matrix->printf("%02d", timeinfo.tm_hour);
+  matrix->setCursor(26, 14);
+  if (timeinfo.tm_sec % 2) {
+    matrix->printf(":");
+  } else {
+    matrix->printf(" ");
+  }
+  matrix->setCursor(36, 16);
+  matrix->printf("%02d", timeinfo.tm_min);
+
+  matrix->setFont();
+  str_len = sprintf(buffer.data(), "%2d", data->temperature);
+  matrix->setCursor(first_off, first_line);
+  matrix->printf("T");
+  matrix->setCursor(second_off, first_line);
+  matrix->printf(":");
+  matrix->setCursor(third_off, first_line);
+  matrix->printf("%s", buffer.data());
+  matrix->drawCircle(third_off + str_len * 6 + 1, 25, 1,
+                    get_text_color(data->sun));
+
+  matrix->setCursor(first_off + matrix_width / 2, first_line);
+  matrix->printf("H");
+  matrix->setCursor(second_off + matrix_width / 2, first_line);
+  matrix->printf(":");
+  matrix->setCursor(third_off + matrix_width / 2, first_line);
+  matrix->printf("%02d%%", data->humidity);
+
+  matrix->setCursor(first_off, second_line);
+  matrix->printf("P");
+  matrix->setCursor(second_off, second_line);
+  matrix->printf(":");
+  matrix->setCursor(third_off, second_line);
+  matrix->printf("%2d", data->ping);
+
+  matrix->setCursor(first_off + matrix_width / 2, second_line);
+  matrix->printf("R");
+  matrix->setCursor(second_off + matrix_width / 2, second_line);
+  matrix->printf(":");
+  matrix->setCursor(third_off + matrix_width / 2, second_line);
+  matrix->printf("%02d%%", data->precipation);
+
+  matrix->setTextColor(co2_color(data->co2, data->sun));
+  matrix->setCursor(10, third_line);
+  matrix->printf("CO2");
+  matrix->setCursor(28, third_line);
+  matrix->printf(":");
+  matrix->setCursor(34, third_line);
+  matrix->printf("%d", data->co2);
+
+  matrix->setTextColor(get_text_color(data->sun));
+  str_len = sprintf(buffer.data(), "%2d", data->mintemp);
+  str_len2 = sprintf(buffer.data(), "%2d", data->maxtemp);
+  matrix->setCursor(9, fourth_line);
+  matrix->printf("%2d", data->mintemp);
+  matrix->setCursor(9 + str_len * 6 + 3, fourth_line);
+  matrix->printf("->");
+  matrix->setCursor(9 + str_len * 6 + 18, fourth_line);
+  matrix->printf("%2d", data->maxtemp);
+  matrix->drawCircle(9 + str_len * 6 + 1, 55, 1, get_text_color(data->sun));
+  matrix->drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
+                    get_text_color(data->sun));
+  matrix->transfer();
+}
+
+void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
+
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  if (data->sun) {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
+  } else {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
+  }
+  matrix->setTextColor(get_text_color(data->sun));
+  matrix->fillRect(0, 0, matrix_width, matrix_height,
+                  static_cast<uint16_t>(color::BLACK));
+  matrix->setFont(&FreeMonoBold12pt7b);
+  matrix->setCursor(0, 16);
+  matrix->printf("%02d", timeinfo.tm_hour);
+  matrix->setCursor(26, 14);
+  if (timeinfo.tm_sec % 2) {
+    matrix->printf(":");
+  } else {
+    matrix->printf(" ");
+  }
+  matrix->setCursor(36, 16);
+  matrix->printf("%02d", timeinfo.tm_min);
+  matrix->setFont();
+  matrix->setCursor(12,32);
+  matrix->printf("No WIFI");
+  matrix->transfer();
+}
+
+void TaskMatrix_update(void *pvParameters) {
+
   int16_t str_len = 0;
   int16_t str_len2 = 0;
   HaExchange *data = (struct HaExchange *)pvParameters;
   Serial.print("Matrix update running on core ");
   Serial.println(xPortGetCoreID());
   RGBmatrixSPI matrix(matrix_width, matrix_height, spi_speed);
-  struct tm timeinfo;
+
   matrix.setTextWrap(false);
 
   for (;;) {
-    getLocalTime(&timeinfo);
-    if (data->sun) {
-      matrix.setBrightness(static_cast<uint16_t>(brightness::DAY));
-    } else {
-      matrix.setBrightness(static_cast<uint16_t>(brightness::NIGHT));
+    switch (data->uistate) {
+    case ui_state::OVERVIEW:
+      draw_overview(data, &matrix);
+      break;
+    case ui_state::NO_WIFI:
+      draw_nowifi(data, &matrix);
+      break;
     }
-    matrix.setTextColor(get_text_color(data->sun));
-    matrix.fillRect(0, 0, matrix_width, matrix_height,
-                    static_cast<uint16_t>(color::BLACK));
-    matrix.setFont(&FreeMonoBold12pt7b);
-    matrix.setCursor(0, 16);
-    matrix.printf("%02d", timeinfo.tm_hour);
-    matrix.setCursor(26, 14);
-    if (timeinfo.tm_sec % 2) {
-      matrix.printf(":");
-    } else {
-      matrix.printf(" ");
-    }
-    matrix.setCursor(36, 16);
-    matrix.printf("%02d", timeinfo.tm_min);
 
-    matrix.setFont();
-    str_len = sprintf(buffer.data(), "%2d", data->temperature);
-    matrix.setCursor(first_off, first_line);
-    matrix.printf("T");
-    matrix.setCursor(second_off, first_line);
-    matrix.printf(":");
-    matrix.setCursor(third_off, first_line);
-    matrix.printf("%s", buffer.data());
-    matrix.drawCircle(third_off + str_len * 6 + 1, 25, 1,
-                      get_text_color(data->sun));
-
-    matrix.setCursor(first_off + matrix_width / 2, first_line);
-    matrix.printf("H");
-    matrix.setCursor(second_off + matrix_width / 2, first_line);
-    matrix.printf(":");
-    matrix.setCursor(third_off + matrix_width / 2, first_line);
-    matrix.printf("%02d%%", data->humidity);
-
-    matrix.setCursor(first_off, second_line);
-    matrix.printf("P");
-    matrix.setCursor(second_off, second_line);
-    matrix.printf(":");
-    matrix.setCursor(third_off, second_line);
-    matrix.printf("%2d", data->ping);
-
-    matrix.setCursor(first_off + matrix_width / 2, second_line);
-    matrix.printf("R");
-    matrix.setCursor(second_off + matrix_width / 2, second_line);
-    matrix.printf(":");
-    matrix.setCursor(third_off + matrix_width / 2, second_line);
-    matrix.printf("%02d%%", data->precipation);
-
-    matrix.setTextColor(co2_color(data->co2, data->sun));
-    matrix.setCursor(10, third_line);
-    matrix.printf("CO2");
-    matrix.setCursor(28, third_line);
-    matrix.printf(":");
-    matrix.setCursor(34, third_line);
-    matrix.printf("%d", data->co2);
-
-    matrix.setTextColor(get_text_color(data->sun));
-    str_len = sprintf(buffer.data(), "%2d", data->mintemp);
-    str_len2 = sprintf(buffer.data(), "%2d", data->maxtemp);
-    matrix.setCursor(9, fourth_line);
-    matrix.printf("%2d", data->mintemp);
-    matrix.setCursor(9 + str_len * 6 + 3, fourth_line);
-    matrix.printf("->");
-    matrix.setCursor(9 + str_len * 6 + 18, fourth_line);
-    matrix.printf("%2d", data->maxtemp);
-    matrix.drawCircle(9 + str_len * 6 + 1, 55, 1, get_text_color(data->sun));
-    matrix.drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
-                      get_text_color(data->sun));
-    matrix.transfer();
   }
 }
 

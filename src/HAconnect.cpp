@@ -46,13 +46,13 @@ auto HAconnect::getWeather(struct HaExchange *haexchange) -> int {
 
   String message;
   String buffer;
-  int result = getEntity("weather.home", message);
+  int result = getEntity("weather.zuhause", message);
 
   if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
-    haexchange->humidity = doc["attributes"]["humidity"];
-    haexchange->temperature = doc["attributes"]["temperature"];
+    //haexchange->humidity = doc["attributes"]["humidity"];
+    //haexchange->temperature = doc["attributes"]["temperature"];
     serializeJson(doc["attributes"]["forecast"][0], buffer);
     Serial.println(buffer);
     return doc["attributes"].as<int>();

@@ -3,7 +3,12 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+enum class ui_state : uint32_t{
+  NO_WIFI = 0x00,
+  OVERVIEW = 0x01
+    };
 struct HaExchange {
+  ui_state uistate;
   int co2;
   int temperature;
   int mintemp;
