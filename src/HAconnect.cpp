@@ -37,27 +37,8 @@ auto HAconnect::getState(String entity) -> int {
     deserializeJson(doc, message);
     return doc["state"].as<int>();
   } else {
-    Serial.println("Error in Connect");
-    return 0;
-  }
-}
-
-auto HAconnect::getWeather(struct HaExchange *haexchange) -> int {
-
-  String message;
-  String buffer;
-  int result = getEntity("weather.zuhause", message);
-
-  if (result == HTTP_CODE_OK) {
-    DynamicJsonDocument doc(2048);
-    deserializeJson(doc, message);
-    //haexchange->humidity = doc["attributes"]["humidity"];
-    //haexchange->temperature = doc["attributes"]["temperature"];
-    serializeJson(doc["attributes"]["forecast"][0], buffer);
-    Serial.println(buffer);
-    return doc["attributes"].as<int>();
-  } else {
-    Serial.println("Error in Connect");
+    Serial.print("Error in Connect:");
+    Serial.println(entity);
     return 0;
   }
 }
@@ -72,7 +53,7 @@ auto HAconnect::getPing() -> int {
     deserializeJson(doc, message);
     return doc["attributes"]["round_trip_time_avg"];
   } else {
-    Serial.println("Error in Connect");
+    Serial.println("Error in Connect: Ping");
     return 0;
   }
 }
@@ -92,7 +73,7 @@ auto HAconnect::getSun() -> bool {
       retval = false;
     }
   } else {
-    Serial.println("Error in Connect");
+    Serial.println("Error in Connect: Sun");
     retval = false;
   }
   return retval;
