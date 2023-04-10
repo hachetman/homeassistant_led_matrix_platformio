@@ -18,6 +18,11 @@ struct HaExchange {
   int ping;
   bool sun;
   int precipation;
+  int solar_lux;
+  int pressure;
+  int uv_index;
+  int wind;
+  int rain;
 };
 class HAconnect {
 public:

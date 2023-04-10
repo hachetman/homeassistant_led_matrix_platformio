@@ -124,28 +124,44 @@ void TaskHA_update(void *pvParameters) {
         timeout++;
       }
     } else {
-      data->uistate = ui_state::OVERVIEW;
-      //check if connection is good
-      data->co2 = ha.getState("sensor.co2");
-      ha.getWeather(data);
-      data->ping = ha.getPing();
-      data->sun = ha.getSun();
-      data->precipation =
-        ha.getState("sensor.openweathermap_forecast_precipitation_probability");
-      data->mintemp =
-        ha.getState("sensor.openweathermap_forecast_temperature_low");
-      data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
-      data->temperature = ha.getState("sensor.balkon_temperatur");
-      data->humidity = ha.getState("sensor.balkon_feuchte");
       getLocalTime(&timeinfo);
+      Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
       if (timeinfo.tm_hour == 4 && timeinfo.tm_min == 0 &&
           timeinfo.tm_sec == 00) {
         ESP.restart();
       }
-    }
-    delay(delay_update);
-  }
+      if ((timeinfo.tm_sec % 30) < 15) {
 
+        data->co2 = ha.getState("sensor.co2");
+        data->ping = ha.getPing();
+        data->sun = ha.getSun();
+        data->precipation =
+          ha.getState("sensor.openweathermap_forecast_precipitation_probability");
+        data->mintemp =
+          ha.getState("sensor.openweathermap_forecast_temperature_low");
+        data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
+        data->temperature =
+          ha.getState("sensor.gw2000a_v2_1_8_outdoor_temperature");
+        data->humidity = ha.getState("sensor.gw2000a_v2_1_8_humidity");
+        data->uistate = ui_state::OVERVIEW;
+      } else {
+        data->co2 = ha.getState("sensor.co2");
+        data->ping = ha.getPing();
+        data->sun = ha.getSun();
+        data->precipation =
+          ha.getState("sensor.openweathermap_forecast_precipitation_probability");
+        data->mintemp =
+          ha.getState("sensor.openweathermap_forecast_temperature_low");
+        data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
+        data->solar_lux = ha.getState("sensor.gw2000a_v2_1_8_solar_lux");
+        data->rain = ha.getState("sensor.gw2000a_v2_1_8_event_rain_rate_piezo");        
+        data->pressure = ha.getState("sensor.gw2000a_v2_1_8_relative_pressure");
+        data->uv_index = ha.getState("sensor.gw2000a_v2_1_8_uv_index");
+        data->wind = ha.getState("sensor.gw2000a_v2_1_8_wind_speed");
+        data->uistate = ui_state::WEATHER;        
+      }
+    }
+  }
 }
 
 uint16_t co2_color(int co2, bool sun) {
@@ -264,6 +280,63 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->transfer();
 }
 
+void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  if (data->sun) {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
+  } else {
+    matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
+  }
+  matrix->setTextColor(get_text_color(data->sun));
+  matrix->fillRect(0, 0, matrix_width, matrix_height,
+                  static_cast<uint16_t>(color::BLACK));
+  matrix->setFont(&FreeMonoBold12pt7b);
+  matrix->setCursor(0, 16);
+  matrix->printf("%02d", timeinfo.tm_hour);
+  matrix->setCursor(26, 14);
+  if (timeinfo.tm_sec % 2) {
+    matrix->printf(":");
+  } else {
+    matrix->printf(" ");
+  }
+  matrix->setCursor(36, 16);
+  matrix->printf("%02d", timeinfo.tm_min);
+
+  matrix->setFont();
+  matrix->setCursor(10, first_line);
+  matrix->printf("LUX");
+  matrix->setCursor(28, first_line);
+  matrix->printf(":");
+  matrix->setCursor(34, first_line);
+  matrix->printf("%03dk", data->solar_lux/1000);
+
+  matrix->setCursor(5, second_line);
+  matrix->printf("RAIN");
+  matrix->setCursor(28, second_line);
+  matrix->printf(":");
+  matrix->setCursor(34, second_line);
+  matrix->printf("%d", data->rain);
+
+
+  matrix->setCursor(5, third_line);
+  matrix->printf("WIND");
+  matrix->setCursor(28, third_line);
+  matrix->printf(":");
+  matrix->setCursor(34, third_line);
+  matrix->printf("%d", data->wind);
+
+  matrix->setCursor(10, fourth_line);
+  matrix->printf("UV");
+  matrix->setCursor(28, fourth_line);
+  matrix->printf(":");
+  matrix->setCursor(34, fourth_line);
+  matrix->printf("%d", data->uv_index);  
+
+ 
+  matrix->transfer();
+}
+
 void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
 
   struct tm timeinfo;
@@ -295,8 +368,6 @@ void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
 
 void TaskMatrix_update(void *pvParameters) {
 
-  int16_t str_len = 0;
-  int16_t str_len2 = 0;
   HaExchange *data = (struct HaExchange *)pvParameters;
   Serial.print("Matrix update running on core ");
   Serial.println(xPortGetCoreID());
@@ -309,11 +380,14 @@ void TaskMatrix_update(void *pvParameters) {
     case ui_state::OVERVIEW:
       draw_overview(data, &matrix);
       break;
+    case ui_state::WEATHER:
+      draw_weather(data, &matrix);
+      break;
     case ui_state::NO_WIFI:
       draw_nowifi(data, &matrix);
       break;
     }
-
+    delay(50);
   }
 }
 
