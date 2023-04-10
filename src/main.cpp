@@ -48,9 +48,9 @@ const uint16_t second_line = 36;
 const uint16_t third_line = 46;
 const uint16_t fourth_line = 56;
 
-const uint16_t first_off = 0;
-const uint16_t second_off = 4;
-const uint16_t third_off = 9;
+const uint16_t first_off = 3;
+const uint16_t second_off = 7;
+const uint16_t third_off = 12;
 
 const char *ntpServer = "pool.ntp.org";
 
