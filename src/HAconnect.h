@@ -5,7 +5,8 @@
 #include <HTTPClient.h>
 enum class ui_state : uint32_t{
   NO_WIFI = 0x00,
-  OVERVIEW = 0x01
+  OVERVIEW = 0x01,
+  WEATHER = 0x02
     };
 struct HaExchange {
   ui_state uistate;
