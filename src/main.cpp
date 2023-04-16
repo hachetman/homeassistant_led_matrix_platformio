@@ -143,6 +143,7 @@ void TaskHA_update(void *pvParameters) {
         data->temperature =
           ha.getState("sensor.gw2000a_v2_1_8_outdoor_temperature");
         data->humidity = ha.getState("sensor.gw2000a_v2_1_8_humidity");
+        data->last_uistate = data->uistate;
         data->uistate = ui_state::OVERVIEW;
       } else {
         data->co2 = ha.getState("sensor.co2");
@@ -158,7 +159,8 @@ void TaskHA_update(void *pvParameters) {
         data->pressure = ha.getState("sensor.gw2000a_v2_1_8_relative_pressure");
         data->uv_index = ha.getState("sensor.gw2000a_v2_1_8_uv_index");
         data->wind = ha.getState("sensor.gw2000a_v2_1_8_wind_speed");
-        data->uistate = ui_state::WEATHER;        
+        data->last_uistate = data->uistate;
+        data->uistate = ui_state::WEATHER;
       }
     }
   }
@@ -199,11 +201,8 @@ uint16_t get_text_color(bool sun) {
     return static_cast<uint16_t>(color::DIM_WHITE);
   }
 }
-void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
+void draw_clock(HaExchange *data, RGBmatrixSPI *matrix) {
   struct tm timeinfo;
-  std::array<char, 10> buffer;
-  int16_t str_len = 0;
-  int16_t str_len2 = 0;
   getLocalTime(&timeinfo);
   if (data->sun) {
     matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
@@ -211,8 +210,7 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
     matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
   }
   matrix->setTextColor(get_text_color(data->sun));
-  matrix->fillRect(0, 0, matrix_width, matrix_height,
-                  static_cast<uint16_t>(color::BLACK));
+  matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   matrix->setFont(&FreeMonoBold12pt7b);
   matrix->setCursor(0, 16);
   matrix->printf("%02d", timeinfo.tm_hour);
@@ -224,6 +222,12 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   }
   matrix->setCursor(36, 16);
   matrix->printf("%02d", timeinfo.tm_min);
+}
+void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
+  std::array<char, 10> buffer;
+  int16_t str_len = 0;
+  int16_t str_len2 = 0;
+  draw_clock(data, matrix);
 
   matrix->setFont();
   str_len = sprintf(buffer.data(), "%2d", data->temperature);
@@ -277,32 +281,16 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->drawCircle(9 + str_len * 6 + 1, 55, 1, get_text_color(data->sun));
   matrix->drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
                     get_text_color(data->sun));
-  matrix->transfer();
+  if (data->uistate != data->last_uistate) {
+    matrix->scroll();
+  } else {
+    matrix->transfer();
+  }
 }
 
 void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  if (data->sun) {
-    matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
-  } else {
-    matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
-  }
-  matrix->setTextColor(get_text_color(data->sun));
-  matrix->fillRect(0, 0, matrix_width, matrix_height,
-                  static_cast<uint16_t>(color::BLACK));
-  matrix->setFont(&FreeMonoBold12pt7b);
-  matrix->setCursor(0, 16);
-  matrix->printf("%02d", timeinfo.tm_hour);
-  matrix->setCursor(26, 14);
-  if (timeinfo.tm_sec % 2) {
-    matrix->printf(":");
-  } else {
-    matrix->printf(" ");
-  }
-  matrix->setCursor(36, 16);
-  matrix->printf("%02d", timeinfo.tm_min);
 
+  draw_clock(data, matrix);
   matrix->setFont();
   matrix->setCursor(10, first_line);
   matrix->printf("LUX");
@@ -332,38 +320,25 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->printf(":");
   matrix->setCursor(34, fourth_line);
   matrix->printf("%d", data->uv_index);  
-
- 
-  matrix->transfer();
+  if (data->uistate != data->last_uistate) {
+    matrix->scroll();
+  } else {
+    matrix->transfer();
+  }
 }
 
 void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
 
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  if (data->sun) {
-    matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
-  } else {
-    matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
-  }
-  matrix->setTextColor(get_text_color(data->sun));
-  matrix->fillRect(0, 0, matrix_width, matrix_height,
-                  static_cast<uint16_t>(color::BLACK));
-  matrix->setFont(&FreeMonoBold12pt7b);
-  matrix->setCursor(0, 16);
-  matrix->printf("%02d", timeinfo.tm_hour);
-  matrix->setCursor(26, 14);
-  if (timeinfo.tm_sec % 2) {
-    matrix->printf(":");
-  } else {
-    matrix->printf(" ");
-  }
-  matrix->setCursor(36, 16);
-  matrix->printf("%02d", timeinfo.tm_min);
+
+  draw_clock(data, matrix);
   matrix->setFont();
   matrix->setCursor(12,32);
   matrix->printf("No WIFI");
-  matrix->transfer();
+  if (data->uistate != data->last_uistate) {
+    matrix->scroll();
+  } else {
+    matrix->transfer();
+  }
 }
 
 void TaskMatrix_update(void *pvParameters) {
