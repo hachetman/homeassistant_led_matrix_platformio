@@ -18,6 +18,10 @@ void RGBmatrixSPI::drawPixel(int16_t x, int16_t y, uint16_t c) {
   *(frameBuffer + address) = c;
 }
 
+void RGBmatrixSPI::fillScreen(uint16_t color){
+  for (int i = 0; i < matrix_width*matrix_height; i++) {
+    *(frameBuffer + i) = color;
+  }
 }
 
 void RGBmatrixSPI::setBrightness(int8_t brightness) {

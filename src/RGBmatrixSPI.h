@@ -13,8 +13,11 @@ public:
   RGBmatrixSPI(int16_t width, int16_t height, int speed);
   void drawPixel(int16_t x, int16_t y, uint16_t c);
   void setBrightness(int8_t brightness);
-  uint8_t *frameBuffer;
+  virtual void fillScreen(uint16_t color);
+  uint16_t *frameBuffer;
+  uint8_t *transferBuffer;
   void transfer();
+  void scroll();
 
 private:
   int matrix_width;
