@@ -10,12 +10,13 @@ RGBmatrixSPI::RGBmatrixSPI(int16_t width, int16_t height, int speed)
   Serial.println("Initializing");
   spi.begin();
   pinMode(VSPI_SS, OUTPUT);
-  frameBuffer = (uint8_t*)malloc(width * height * 2);
+  frameBuffer = (uint16_t*)malloc(width * height*4);
+  transferBuffer =(uint8_t*)frameBuffer;
 }
 void RGBmatrixSPI::drawPixel(int16_t x, int16_t y, uint16_t c) {
-  uint16_t address = 2* (x + matrix_width * y);
-  *(frameBuffer + address) = (c & lower_bytes);
-  *(frameBuffer + address + 1) = (c >> upper_shift);
+  uint16_t address = (x + matrix_width * y);
+  *(frameBuffer + address) = c;
+}
 
 }
 
