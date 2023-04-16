@@ -20,9 +20,9 @@ public:
   void scroll();
 
 private:
-  int matrix_width;
-  int matrix_height;
-  int spi_speed;
+  const int matrix_width;
+  const int matrix_height;
+  const int spi_speed;
   SPIClass spi;
   enum class Registers : std::uint8_t {
     brightness = 0xf1,
