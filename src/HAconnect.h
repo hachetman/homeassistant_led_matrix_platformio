@@ -10,6 +10,7 @@ enum class ui_state : uint32_t{
     };
 struct HaExchange {
   ui_state uistate;
+  ui_state last_uistate;
   int co2;
   int temperature;
   int mintemp;
