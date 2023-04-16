@@ -39,9 +39,8 @@ void RGBmatrixSPI::transfer() {
   spi.transfer(0x00);
   spi.transfer(0x00);
   for (int i = 0; i < matrix_width*matrix_height*2; i++) {
-    spi.transfer(*(frameBuffer+i));
+    spi.transfer(*(transferBuffer+i));
   }
-
   digitalWrite(VSPI_SS, HIGH); // pull ss high to signify end of data transfer
   spi.endTransaction();//
   spi.beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE0));
