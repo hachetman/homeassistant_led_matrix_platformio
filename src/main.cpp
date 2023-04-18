@@ -376,7 +376,6 @@ void TaskMatrix_update(void *pvParameters) {
       draw_nowifi(data, &matrix);
       break;
     }
-    delay(50);
   }
 }
 
