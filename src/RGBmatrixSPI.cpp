@@ -24,6 +24,11 @@ void RGBmatrixSPI::fillScreen(uint16_t color){
   }
 }
 
+void RGBmatrixSPI::fillClock(uint16_t color){
+  for (int i = 0; i < matrix_width*20; i++) {
+    *(frameBuffer + i) = color;
+  }
+}
 void RGBmatrixSPI::setBrightness(int8_t brightness) {
   spi.beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE0));
   digitalWrite(VSPI_SS, LOW); // pull SS slow to prep other end for transfer

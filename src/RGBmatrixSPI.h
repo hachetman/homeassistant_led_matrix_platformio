@@ -14,6 +14,7 @@ public:
   void drawPixel(int16_t x, int16_t y, uint16_t c);
   void setBrightness(int8_t brightness);
   virtual void fillScreen(uint16_t color);
+  void fillClock(uint16_t color);
   uint16_t *frameBuffer;
   uint8_t *transferBuffer;
   void transfer();
