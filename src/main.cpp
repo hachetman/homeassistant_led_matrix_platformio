@@ -35,7 +35,7 @@ enum class co2_thresh : uint16_t { GOOD = 700, MEDIUM = 900, BAD = 1000 };
 const int matrix_width = 64;
 const int matrix_height = 64;
 const int uart_speed = 115200;
-const int spi_speed = 8000000;
+const int spi_speed = 12000000;
 const int delay_1s = 1000;
 const int delay_500ms = 500;
 const int delay_update = 50000;
