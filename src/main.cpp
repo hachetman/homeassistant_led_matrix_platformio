@@ -210,7 +210,7 @@ void draw_clock(HaExchange *data, RGBmatrixSPI *matrix) {
     matrix->setBrightness(static_cast<uint16_t>(brightness::NIGHT));
   }
   matrix->setTextColor(get_text_color(data->sun));
-  matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
+
   matrix->setFont(&FreeMonoBold12pt7b);
   matrix->setCursor(0, 16);
   matrix->printf("%02d", timeinfo.tm_hour);
@@ -227,6 +227,7 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   std::array<char, 10> buffer;
   int16_t str_len = 0;
   int16_t str_len2 = 0;
+  matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   draw_clock(data, matrix);
 
   matrix->setFont();
@@ -282,7 +283,11 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
                     get_text_color(data->sun));
   if (data->uistate != data->last_uistate) {
-    matrix->scroll();
+    for (int i = 0; i < 64; i++) {
+      matrix->scroll(i);
+      matrix->fillClock(static_cast<uint16_t>(color::BLACK));
+      draw_clock(data, matrix);
+    }
   } else {
     matrix->transfer();
   }
@@ -290,6 +295,7 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
 
 void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
 
+  matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   draw_clock(data, matrix);
   matrix->setFont();
   matrix->setCursor(10, first_line);
@@ -319,9 +325,13 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->setCursor(28, fourth_line);
   matrix->printf(":");
   matrix->setCursor(34, fourth_line);
-  matrix->printf("%d", data->uv_index);  
+  matrix->printf("%d", data->uv_index);
   if (data->uistate != data->last_uistate) {
-    matrix->scroll();
+    for (int i = 0; i < 64; i++) {
+      matrix->scroll(i);
+      matrix->fillClock(static_cast<uint16_t>(color::BLACK));
+      draw_clock(data, matrix);
+    }
   } else {
     matrix->transfer();
   }
@@ -329,13 +339,17 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
 
 void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
 
-
+  matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   draw_clock(data, matrix);
   matrix->setFont();
   matrix->setCursor(12,32);
   matrix->printf("No WIFI");
   if (data->uistate != data->last_uistate) {
-    matrix->scroll();
+    for (int i = 0; i < 64; i++) {
+      matrix->scroll(i);
+      matrix->fillClock(static_cast<uint16_t>(color::BLACK));
+      draw_clock(data, matrix);
+    }
   } else {
     matrix->transfer();
   }
