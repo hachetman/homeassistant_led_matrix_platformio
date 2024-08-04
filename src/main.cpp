@@ -3,14 +3,12 @@
 #include "HardwareSerial.h"
 #include "RGBmatrixSPI.h"
 #include "secrets.h"
-#include "stdint.h"
-#include "sys/unistd.h"
 #include <Arduino.h>
 #include <Fonts/FreeMonoBold12pt7b.h>
 #include <array>
 #include <cstdint>
 #include <cstdio>
-#include <time.h>
+#include <ctime>
 
 #include <WiFi.h>
 
