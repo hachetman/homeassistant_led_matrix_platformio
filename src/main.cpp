@@ -1,3 +1,4 @@
+#include "main.h"
 #include "HAconnect.h"
 #include "HardwareSerial.h"
 #include "RGBmatrixSPI.h"
