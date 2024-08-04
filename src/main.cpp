@@ -50,7 +50,7 @@ void setup() {
     &TaskMatrix,          /* Task handle to keep track of created task */
     1);                   /* pin task to core 1 */
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", ntpServer);
-  struct tm timeinfo;
+  struct tm timeinfo{};
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Failed to obtain time");
     return;
@@ -60,13 +60,13 @@ void setup() {
 
 void TaskHA_update(void *pvParameters) {
   auto *data = (struct HaExchange *)pvParameters;
-  struct tm timeinfo;
+  struct tm timeinfo{};
   Serial.print("HA Update running on core ");
   Serial.println(xPortGetCoreID());
   HAconnect ha(address, port, auth);
   for (;;) {
     Serial.println("Updating sensors");
-    if (WiFi.status() != WL_CONNECTED) {
+    if (WiFiClass::status() != WL_CONNECTED) {
       data->uistate = ui_state::NO_WIFI;
       Serial.println("Reconnecting to WIFI network");
       WiFi.disconnect();
@@ -103,7 +103,6 @@ void TaskHA_update(void *pvParameters) {
         ha.getWeather(data);
         data->solar_lux = ha.getState("sensor.gw2000a_v2_1_8_solar_lux");
         data->rain = ha.getState("sensor.gw2000a_v2_1_8_event_rain_rate_piezo");        
-        data->pressure = ha.getState("sensor.gw2000a_v2_1_8_relative_pressure");
         data->uv_index = ha.getState("sensor.gw2000a_v2_1_8_uv_index");
         data->wind = ha.getState("sensor.gw2000a_v2_1_8_wind_speed");
         data->last_uistate = data->uistate;
@@ -149,7 +148,7 @@ uint16_t get_text_color(bool sun) {
   }
 }
 void draw_clock(HaExchange *data, RGBmatrixSPI *matrix) {
-  struct tm timeinfo;
+  struct tm timeinfo{};
   getLocalTime(&timeinfo);
   if (data->sun) {
     matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
@@ -171,9 +170,9 @@ void draw_clock(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->printf("%02d", timeinfo.tm_min);
 }
 void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
-  std::array<char, 10> buffer;
-  int16_t str_len = 0;
-  int16_t str_len2 = 0;
+  std::array<char, 10> buffer{};
+  int str_len;
+  int str_len2;
   matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   draw_clock(data, matrix);
 
@@ -304,10 +303,10 @@ void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
 
 void TaskMatrix_update(void *pvParameters) {
 
-  HaExchange *data = (struct HaExchange *)pvParameters;
+  auto *data = (struct HaExchange *)pvParameters;
   Serial.print("Matrix update running on core ");
   Serial.println(xPortGetCoreID());
-  RGBmatrixSPI matrix(matrix_width, matrix_height, spi_speed);
+  RGBmatrixSPI matrix(spi_speed, 3);
 
   matrix.setTextWrap(false);
 

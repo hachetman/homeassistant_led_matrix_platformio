@@ -1,7 +1,9 @@
 #include "HAconnect.h"
+
 #include "ArduinoJson.hpp"
 #include "HTTPClient.h"
 #include "HardwareSerial.h"
+#include <utility>
 
 HAconnect::HAconnect(String Address, int Port, String Auth)
     : http(), address(std::move(Address)), port(Port), auth(std::move(Auth)) {}
@@ -21,7 +23,7 @@ auto HAconnect::getEntity(const String &entity, String &message) -> int {
       message = http.getString();
       http.end();
     } else {
-      message = http.errorToString(httpCode).c_str();
+      message = HTTPClient::errorToString(httpCode).c_str();
       http.end();
     }
   }
@@ -58,6 +60,7 @@ auto HAconnect::getState(const String &entity) -> int {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
     return doc["state"].as<int>();
+
   } else {
     Serial.print("Error in Connect:");
     Serial.println(entity);
@@ -85,7 +88,7 @@ auto HAconnect::getSun() -> bool {
   String message;
   String buffer;
   int result = getEntity("sun.sun", message);
-  bool retval = false;
+  bool retval;
   if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
