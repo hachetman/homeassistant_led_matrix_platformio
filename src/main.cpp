@@ -90,11 +90,7 @@ void TaskHA_update(void *pvParameters) {
         data->co2 = ha.getState("sensor.co2");
         data->ping = ha.getPing();
         data->sun = ha.getSun();
-        data->precipation =
-          ha.getState("sensor.openweathermap_forecast_precipitation_probability");
-        data->mintemp =
-          ha.getState("sensor.openweathermap_forecast_temperature_low");
-        data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
+        ha.getWeather(data);
         data->temperature =
           ha.getState("sensor.gw2000a_v2_1_8_outdoor_temperature");
         data->humidity = ha.getState("sensor.gw2000a_v2_1_8_humidity");
@@ -104,11 +100,7 @@ void TaskHA_update(void *pvParameters) {
         data->co2 = ha.getState("sensor.co2");
         data->ping = ha.getPing();
         data->sun = ha.getSun();
-        data->precipation =
-          ha.getState("sensor.openweathermap_forecast_precipitation_probability");
-        data->mintemp =
-          ha.getState("sensor.openweathermap_forecast_temperature_low");
-        data->maxtemp = ha.getState("sensor.openweathermap_forecast_temperature");
+        ha.getWeather(data);
         data->solar_lux = ha.getState("sensor.gw2000a_v2_1_8_solar_lux");
         data->rain = ha.getState("sensor.gw2000a_v2_1_8_event_rain_rate_piezo");        
         data->pressure = ha.getState("sensor.gw2000a_v2_1_8_relative_pressure");

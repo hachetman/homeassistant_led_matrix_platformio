@@ -28,7 +28,28 @@ auto HAconnect::getEntity(const String &entity, String &message) -> int {
   return httpCode;
 }
 
-auto HAconnect::getState(String entity) -> int {
+auto HAconnect::getWeather(struct HaExchange *haexchange) -> int {
+  String message;
+  int result = getEntity("sensor.weather_forecast_daily", message);
+
+  if (result == HTTP_CODE_OK) {
+    DynamicJsonDocument doc(2048);
+    deserializeJson(doc, message);
+    String forecastTomorrow = doc["attributes"]["forecast"][0];
+    haexchange->maxtemp =
+        doc["attributes"]["forecast"][0]["temperature"].as<int>();
+    haexchange->mintemp = doc["attributes"]["forecast"][0]["templow"].as<int>();
+    haexchange->precipation =
+        doc["attributes"]["forecast"][0]["precipation"].as<int>();
+
+    return 0;
+  } else {
+    Serial.print("Error in Connect: ");
+    Serial.println(message.c_str());
+    return 1;
+  }
+}
+auto HAconnect::getState(const String &entity) -> int {
 
   String message;
   int result = getEntity(entity, message);
