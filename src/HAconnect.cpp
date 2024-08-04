@@ -72,7 +72,7 @@ auto HAconnect::getPing() -> int {
 
   String message;
   String buffer;
-  int result = getEntity("binary_sensor.ping_heise_de", message);
+  int result = getEntity("binary_sensor.heise_de", message);
   if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
