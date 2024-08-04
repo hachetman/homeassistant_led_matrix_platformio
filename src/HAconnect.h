@@ -20,7 +20,6 @@ struct HaExchange {
   bool sun;
   int precipation;
   int solar_lux;
-  int pressure;
   int uv_index;
   int wind;
   int rain;
@@ -28,15 +27,15 @@ struct HaExchange {
 class HAconnect {
 public:
   HAconnect(String Address, int Port, String Auth);
-  auto getState(String entity) -> int;
-  auto getWeather(struct HaExchange *haexchange)
-      -> int;
+  auto getState(const String& entity) -> int;
+  auto getWeather(struct HaExchange *haexchange) -> int;
+
   auto getPing()
       -> int;
   auto getSun() -> bool;
 
 private:
-  auto getEntity(String entity, String &message) -> int;
+  auto getEntity(const String& entity, String &message) -> int;
   HTTPClient http;
   String address;
   int port;

@@ -4,10 +4,11 @@
 #include "HardwareSerial.h"
 
 HAconnect::HAconnect(String Address, int Port, String Auth)
-    : http(), address(Address), port(Port), auth(Auth) {}
-auto HAconnect::getEntity(String entity, String &message) -> int {
+    : http(), address(std::move(Address)), port(Port), auth(std::move(Auth)) {}
+
+auto HAconnect::getEntity(const String &entity, String &message) -> int {
   String access_path = "/api/states/" + entity;
-  int httpCode = 0;
+  int httpCode;
   http.begin(address, port, access_path);
   http.addHeader("Content-Type", "application/json");
   http.setAuthorization("");
