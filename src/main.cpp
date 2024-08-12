@@ -64,7 +64,6 @@ void TaskHA_update(void *pvParameters) {
   Serial.println(xPortGetCoreID());
   HAconnect ha(address, port, auth);
   for (;;) {
-    Serial.println("Updating sensors");
     if (WiFiClass::status() != WL_CONNECTED) {
       data->uistate = ui_state::NO_WIFI;
       Serial.println("Reconnecting to WIFI network");
@@ -85,29 +84,30 @@ void TaskHA_update(void *pvParameters) {
         ESP.restart();
       }
       if ((timeinfo.tm_sec % 30) < 15) {
+        data->last_uistate = data->uistate;
+        data->uistate = ui_state::OVERVIEW;
+      } else {
+        data->last_uistate = data->uistate;
+        data->uistate = ui_state::WEATHER;
+      }
 
+      // Update only once a minute
+      if (timeinfo.tm_sec == 10) {
         data->co2 = ha.getState("sensor.co2");
         data->ping = ha.getPing();
         data->sun = ha.getSun();
         ha.getWeather(data);
         data->temperature =
-          ha.getState("sensor.gw2000a_v2_1_8_outdoor_temperature");
+            ha.getState("sensor.gw2000a_v2_1_8_outdoor_temperature");
         data->humidity = ha.getState("sensor.gw2000a_v2_1_8_humidity");
-        data->last_uistate = data->uistate;
-        data->uistate = ui_state::OVERVIEW;
-      } else {
-        data->co2 = ha.getState("sensor.co2");
-        data->ping = ha.getPing();
-        data->sun = ha.getSun();
-        ha.getWeather(data);
         data->solar_lux = ha.getState("sensor.gw2000a_v2_1_8_solar_lux");
-        data->rain = ha.getState("sensor.gw2000a_v2_1_8_event_rain_rate_piezo");        
+        data->rain = ha.getState("sensor.gw2000a_v2_1_8_event_rain_rate_piezo");
         data->uv_index = ha.getState("sensor.gw2000a_v2_1_8_uv_index");
         data->wind = ha.getState("sensor.gw2000a_v2_1_8_wind_speed");
-        data->last_uistate = data->uistate;
-        data->uistate = ui_state::WEATHER;
       }
     }
+    vTaskDelay(200);
+
   }
 }
 
