@@ -42,7 +42,7 @@ auto HAconnect::getWeather(struct HaExchange *haexchange) -> int {
         doc["attributes"]["forecast"][0]["temperature"].as<int>();
     haexchange->mintemp = doc["attributes"]["forecast"][0]["templow"].as<int>();
     haexchange->precipation =
-        doc["attributes"]["forecast"][0]["precipation"].as<int>();
+        doc["attributes"]["forecast"][0]["precipitation_probability"].as<int>();
 
     return 0;
   } else {
