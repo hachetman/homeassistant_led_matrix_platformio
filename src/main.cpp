@@ -12,8 +12,6 @@
 
 #include <WiFi.h>
 
-
-
 void setup() {
 
   Serial.begin(uart_speed);
@@ -29,27 +27,27 @@ void setup() {
   // create a task that will be executed in the Task1code() function, with
   // priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-    TaskHA_update,    /* Task function. */
-    "Task HA Update", /* name of task. */
-    stacksize,        /* Stack size of task */
-    &matrix_data,     /* parameter of the task */
-    task_prio,        /* priority of the task */
-    &TaskHA,          /* Task handle to keep track of created task */
-    0);               /* pin task to core 0 */
+      TaskHA_update,    /* Task function. */
+      "Task HA Update", /* name of task. */
+      stacksize,        /* Stack size of task */
+      &matrix_data,     /* parameter of the task */
+      task_prio,        /* priority of the task */
+      &TaskHA,          /* Task handle to keep track of created task */
+      0);               /* pin task to core 0 */
   delay(delay_500ms);
 
   // create a task that will be executed in the Task2code() function, with
   // priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-    TaskMatrix_update,    /* Task function. */
-    "Task Matrix Update", /* name of task. */
-    stacksize,            /* Stack size of task */
-    &matrix_data,         /* parameter of the task */
-    task_prio,            /* priority of the task */
-    &TaskMatrix,          /* Task handle to keep track of created task */
-    1);                   /* pin task to core 1 */
+      TaskMatrix_update,    /* Task function. */
+      "Task Matrix Update", /* name of task. */
+      stacksize,            /* Stack size of task */
+      &matrix_data,         /* parameter of the task */
+      task_prio,            /* priority of the task */
+      &TaskMatrix,          /* Task handle to keep track of created task */
+      1);                   /* pin task to core 1 */
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", ntpServer);
-  struct tm timeinfo{};
+  struct tm timeinfo {};
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Failed to obtain time");
     return;
@@ -59,7 +57,7 @@ void setup() {
 
 void TaskHA_update(void *pvParameters) {
   auto *data = (struct HaExchange *)pvParameters;
-  struct tm timeinfo{};
+  struct tm timeinfo {};
   Serial.print("HA Update running on core ");
   Serial.println(xPortGetCoreID());
   HAconnect ha(address, port, auth);
@@ -147,7 +145,7 @@ uint16_t get_text_color(bool sun) {
   }
 }
 void draw_clock(HaExchange *data, RGBmatrixSPI *matrix) {
-  struct tm timeinfo{};
+  struct tm timeinfo {};
   getLocalTime(&timeinfo);
   if (data->sun) {
     matrix->setBrightness(static_cast<uint16_t>(brightness::DAY));
@@ -184,7 +182,7 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->setCursor(third_off, first_line);
   matrix->printf("%s", buffer.data());
   matrix->drawCircle(third_off + str_len * 6 + 1, 25, 1,
-                    get_text_color(data->sun));
+                     get_text_color(data->sun));
 
   matrix->setCursor(first_off + matrix_width / 2, first_line);
   matrix->printf("H");
@@ -226,7 +224,7 @@ void draw_overview(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->printf("%2d", data->maxtemp);
   matrix->drawCircle(9 + str_len * 6 + 1, 55, 1, get_text_color(data->sun));
   matrix->drawCircle(9 + str_len * 6 + 19 + str_len2 * 6, 55, 1,
-                    get_text_color(data->sun));
+                     get_text_color(data->sun));
   if (data->uistate != data->last_uistate) {
     for (int i = 0; i < 64; i++) {
       matrix->scroll(i);
@@ -248,7 +246,7 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->setCursor(28, first_line);
   matrix->printf(":");
   matrix->setCursor(34, first_line);
-  matrix->printf("%03dk", data->solar_lux/1000);
+  matrix->printf("%03dk", data->solar_lux / 1000);
 
   matrix->setCursor(5, second_line);
   matrix->printf("RAIN");
@@ -256,7 +254,6 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
   matrix->printf(":");
   matrix->setCursor(34, second_line);
   matrix->printf("%d", data->rain);
-
 
   matrix->setCursor(5, third_line);
   matrix->printf("WIND");
@@ -282,12 +279,12 @@ void draw_weather(HaExchange *data, RGBmatrixSPI *matrix) {
   }
 }
 
-void draw_nowifi(HaExchange *data,   RGBmatrixSPI *matrix) {
+void draw_nowifi(HaExchange *data, RGBmatrixSPI *matrix) {
 
   matrix->fillScreen(static_cast<uint16_t>(color::BLACK));
   draw_clock(data, matrix);
   matrix->setFont();
-  matrix->setCursor(12,32);
+  matrix->setCursor(12, 32);
   matrix->printf("No WIFI");
   if (data->uistate != data->last_uistate) {
     for (int i = 0; i < 64; i++) {
