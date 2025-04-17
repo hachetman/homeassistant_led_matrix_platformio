@@ -72,11 +72,11 @@ auto HAconnect::getPing() -> int {
 
   String message;
   String buffer;
-  int result = getEntity("binary_sensor.heise_de", message);
+  int result = getEntity("sensor.ping_heise", message);
   if (result == HTTP_CODE_OK) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, message);
-    return doc["attributes"]["round_trip_time_avg"];
+    return doc["state"].as<int>();
   } else {
     Serial.println("Error in Connect: Ping");
     return 0;
