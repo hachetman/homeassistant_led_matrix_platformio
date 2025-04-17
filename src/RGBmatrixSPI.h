@@ -1,7 +1,6 @@
 #ifndef RGBMATRIXSPI_H
 #define RGBMATRIXSPI_H
 #include "Adafruit_GFX.h"
-#include <cstdint>
 #include <SPI.h>
 #define VSPI_SS SS
 #define MATRIX_HEIGHT 64
@@ -15,6 +14,7 @@ public:
   void setBrightness(int8_t brightness);
   void fillScreen(uint16_t color) override;
   void fillClock(uint16_t color) const;
+
   uint16_t *frameBuffer;
   uint16_t *backBuffer;
   uint8_t *transferBuffer;

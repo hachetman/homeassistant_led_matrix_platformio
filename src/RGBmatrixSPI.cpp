@@ -1,6 +1,5 @@
 #include "RGBmatrixSPI.h"
 
-#include <cstdint>
 #include <cstdlib>
 
 RGBmatrixSPI::RGBmatrixSPI(int speed, int rotation)
@@ -9,9 +8,9 @@ RGBmatrixSPI::RGBmatrixSPI(int speed, int rotation)
   Serial.println("Initializing");
   spi.begin();
   pinMode(VSPI_SS, OUTPUT);
-  frameBuffer = (uint16_t*)malloc(MATRIX_HEIGHT * MATRIX_WIDTH*4);
-  backBuffer = (uint16_t*)malloc(MATRIX_HEIGHT * MATRIX_WIDTH*2);
-  transferBuffer =(uint8_t*)backBuffer;
+  frameBuffer = static_cast<uint16_t *>(malloc(MATRIX_HEIGHT * MATRIX_WIDTH * 4));
+  backBuffer = static_cast<uint16_t *>(malloc(MATRIX_HEIGHT * MATRIX_WIDTH * 2));
+  transferBuffer =reinterpret_cast<uint8_t *>(backBuffer);
 }
 void RGBmatrixSPI::drawPixel(int16_t x, int16_t y, uint16_t c) {
   uint16_t address = (x + MATRIX_WIDTH * y);
@@ -38,7 +37,8 @@ void RGBmatrixSPI::setBrightness(int8_t brightness) {
   spi.endTransaction();
 }
 void RGBmatrixSPI::transfer() {
-  uint16_t x_rot, y_rot;
+  uint16_t x_rot = 0;
+  uint16_t y_rot = 0;
   for (int y = 0; y < MATRIX_HEIGHT; y++) {
     for (int x = 0; x < MATRIX_WIDTH; x++) {
       switch (rotation) {
@@ -84,7 +84,8 @@ void RGBmatrixSPI::transfer() {
 }
 
 void RGBmatrixSPI::scroll( uint32_t scroll) {
-  uint16_t x_rot, y_rot;
+  uint16_t x_rot = 0;
+  uint16_t y_rot = 0;
   for (int y = 0; y < MATRIX_HEIGHT; y++) {
     for (int x = 0; x < MATRIX_WIDTH; x++) {
       switch (rotation) {
