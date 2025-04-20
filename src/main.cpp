@@ -91,7 +91,7 @@ void TaskHA_update(void *pvParameters) {
 
       // Update only once a minute
       if (timeinfo.tm_sec == 10) {
-        data->co2 = ha.getState("sensor.co2");
+        data->co2 = ha.getState("sensor.co2_monitor_co2");
         data->ping = ha.getPing();
         data->sun = ha.getSun();
         ha.getWeather(data);
